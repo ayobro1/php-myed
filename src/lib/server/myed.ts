@@ -215,16 +215,17 @@ export async function getAssignments(session: MyEdSession): Promise<Assignment[]
 			const cells = $(row).find('td');
 			const text = cells.map((__, cell) => $(cell).text().trim()).get();
 			if (text.length >= 8) {
-				let pct = text[6];
-				const score = text[7];
-				// Compute percentage from score fraction (e.g. "16.5/18.0" → "92")
-				// Handle ASCII slash, fraction slash (⁄), division slash (∕), etc.
-				const slashMatch = score?.match(/(\d+(?:\.\d+)?)\s*[\/⁄∕]\s*(\d+(?:\.\d+)?)/);
-				if (slashMatch) {
-					const num = parseFloat(slashMatch[1]);
-					const den = parseFloat(slashMatch[2]);
+				const rawPct = text[6];
+				let score = text[7];
+				let pct = rawPct;
+				// text[6] may contain a fraction like "16.5 / 18.0" — parse and compute %
+				const fracMatch = rawPct?.match(/(\d+(?:\.\d+)?)\s*[\/⁄∕]\s*(\d+(?:\.\d+)?)/);
+				if (fracMatch) {
+					const num = parseFloat(fracMatch[1]);
+					const den = parseFloat(fracMatch[2]);
 					if (den > 0 && !isNaN(num) && !isNaN(den)) {
 						pct = String(Math.round((num / den) * 100));
+						score = `${num} / ${den}`;
 					}
 				}
 				assignments.push({
